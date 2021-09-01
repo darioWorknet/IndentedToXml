@@ -1,82 +1,89 @@
-file = 'test.txt'
-level = 0
-xml_str = ''
-not_closed = [] # LIFO list
+file = 'test.txt'   # File to be read
+level = 0           # Starting level
+xml_str = ''        # Output string
+not_closed = []     # LIFO list
+levels = dict()     # To store the level of each label
+separator = ' --- ' # To be printed between labels
 
-def count_spaces(str):
-    for i, c in enumerate(str):
-        if c != " ":
-            return i
+
+def leading_spaces(s):
+    ''' Count leading spaces in string '''
+    return len(s) - len(s.lstrip())
+
 
 def to_xml(str, close=False, aligned=False):
-
+    ''' Given a string converts it to xml format '''
     if close:
         n = levels[str.strip()]
         if aligned:
-            return (' --- ') + "</" + str.strip() + ">"
+            return separator + "</" + str.strip() + ">"
         return (' ' * n) + "</" + str.strip() + ">"
 
     return (' ' *level) + "<" + str.strip() + ">"
 
 
 
-levels = dict()
 
 
-with open(file, 'r') as f:
-    for line in f:
-        # If line empty go to next iteration
-        if line.strip() == "":
-            continue
+if __name__ == '__main__':
+    # Open file and iterate lines
+    with open(file, 'r') as f:
+        for line in f:
 
-        level = count_spaces(line)
-        levels[line.strip()] = level
+            # If line empty go to next iteration
+            if line.strip() == "":
+                continue
+            
+            # Store level
+            level = leading_spaces(line)
+            levels[line.strip()] = level
 
-        # If we exit the level
-        if level == 0:
-            xml_str += to_xml(line) + '\n'
-            not_closed.append(line)
+            # MAIN LOGIC =========================================================
+            # If it is the first item -> add line to output and append to not_closed
+            if level == 0:
+                xml_str += to_xml(line) + '\n'
+                not_closed.append(line)
 
-        # If we exit the level
-        elif level < prev_level:
-            xml_str = xml_str[:-1]
-            align = True
-            for i in range((prev_level - level) // 4 + 1):
+            # If entering a level -> add prev line to output, add line to output
+            # and append it to not_closed
+            elif level > prev_level:
+                xml_str += to_xml(line) + '\n'
+                not_closed.append(line)
+
+            # If we are in the same level -> close previous level
+            elif level == prev_level:
+                xml_str = xml_str[:-1]
                 prev = not_closed.pop()
-                xml_str += to_xml(prev, close=True, aligned=align) + '\n'
-                align = False
-            # New one open
-            xml_str += to_xml(line) + '\n'
-            # Append to list
-            not_closed.append(line)
+                xml_str += to_xml(prev, close=True, aligned=True) + '\n'
+
+                xml_str += to_xml(line) + '\n'
+
+                not_closed.append(line)
+
+            # If we exit the level -> check how many levels have we exited
+            # close them all. Add line to output and append to not_closed
+            elif level < prev_level:
+                xml_str = xml_str[:-1]
+                align = True
+                for i in range((prev_level - level) // 4 + 1):
+                    prev = not_closed.pop()
+                    xml_str += to_xml(prev, close=True, aligned=align) + '\n'
+                    align = False
+
+                xml_str += to_xml(line) + '\n'
+
+                not_closed.append(line)
+
+            # Store previous level
+            prev_level = leading_spaces(line)
 
 
-        # If we enter the level -> print actual line and append it to the list
-        elif level > prev_level:
-            xml_str += to_xml(line) + '\n'
-            not_closed.append(line)
+    # Close last opened labels
+    xml_str = xml_str[:-1]
+    align = True
+    for label in reversed(not_closed):
+        xml_str += to_xml(label, close=True, aligned=align) + '\n'
+        align = False 
 
-        # If we are in the same level
-        elif level == prev_level:
-            # Close previous at the same level
-            xml_str = xml_str[:-1]
-            prev = not_closed.pop()
-            xml_str += to_xml(prev, close=True, aligned=True) + '\n'
-            # Print new one
-            xml_str += to_xml(line) + '\n'
-            # Not closed this one yet
-            not_closed.append(line)
-
-        prev_level = count_spaces(line)
-
-
-
-
-# Close opened labels
-xml_str = xml_str[:-1]
-align = True
-for label in reversed(not_closed):
-    xml_str += to_xml(label, close=True, aligned=align) + '\n'
-    align = False 
-
-print(xml_str)
+    # Final output
+    print(xml_str)
