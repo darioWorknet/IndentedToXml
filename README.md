@@ -1,8 +1,8 @@
 # Indented text to xml
 
-This project prettends to create a tool whose input is a .txt file with indented text and whose autput will be the same text but in xml format. All this having into account that labels can store variables and values.
+This project prettends to create a tool whose input is an indented text .txt and whose output is the conversion to XML format. All this having into account that labels can store variables and values.
 
-An example of input output could be the following:
+An example of input/output could be the following:
 
 input:
 ```txt
